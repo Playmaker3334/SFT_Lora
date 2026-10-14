@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+datos_sft/
+lotes_sft/
+salidas/
