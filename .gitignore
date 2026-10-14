@@ -1,5 +1,8 @@
 __pycache__/
 *.py[cod]
+datos/mock.jsonl
 datos_sft/
+datos_mock/
 lotes_sft/
+lotes_mock/
 salidas/
