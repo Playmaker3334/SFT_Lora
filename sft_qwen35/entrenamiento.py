@@ -76,6 +76,7 @@ def argumentos(cfg, salida, evaluar):
         use_liger_kernel=True,
         liger_kernel_config=LIGER,
         remove_unused_columns=False,
+        ddp_find_unused_parameters=False,
         dataloader_num_workers=2,
         report_to=["tensorboard"],
         seed=cfg["semilla"],
