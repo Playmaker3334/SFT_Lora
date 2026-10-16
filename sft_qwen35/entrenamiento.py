@@ -1,4 +1,7 @@
 import json
+import signal
+import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -8,19 +11,26 @@ from transformers import Trainer, TrainerCallback, TrainingArguments
 from .empaquetado import Colador, Contenedores
 from .evaluacion import cargar_lotes, sondear
 from .modelo import LIGER, aplicar_lora, cargar, exigir_kernels
+from .seguimiento import Seguimiento
 
 
 class Sondeo(TrainerCallback):
-    def __init__(self, lotes, fragmento, destino):
+    def __init__(self, lotes, fragmento, destino, registro=None):
         self.lotes = lotes
         self.fragmento = fragmento
         self.destino = Path(destino)
         self.destino.mkdir(parents=True, exist_ok=True)
+        self.registro = registro
 
     def _registrar(self, state, model):
         if not state.is_world_process_zero or not self.lotes:
             return
+        inicio = time.time()
         resultado = sondear(model, self.lotes, self.fragmento)
+        if self.registro:
+            self.registro.anexar(
+                "eventos.jsonl", {"evento": "sondeo", "step": state.global_step, "inicio": inicio, "fin": time.time()}
+            )
         (self.destino / f"paso-{state.global_step}.json").write_text(json.dumps(resultado, indent=2))
         for nombre, metricas in resultado.items():
             total = metricas["total"]
@@ -71,6 +81,9 @@ def argumentos(cfg, salida, evaluar):
         save_strategy=cfg["estrategia"],
         eval_steps=cfg["pasos_guardado"],
         save_steps=cfg["pasos_guardado"],
+        save_total_limit=cfg["checkpoints"],
+        load_best_model_at_end=evaluar,
+        metric_for_best_model="eval_loss" if evaluar else None,
         logging_steps=cfg["pasos_registro"],
         include_num_input_tokens_seen="all",
         use_liger_kernel=True,
@@ -84,23 +97,36 @@ def argumentos(cfg, salida, evaluar):
 
 
 def entrenar(cfg, salida, reanudar=None):
-    exigir_kernels()
-    modelo = aplicar_lora(cargar(cfg["modelo"], liger=True), cfg["lora"])
-    datos = Path(cfg["datos"]["salida"])
-    ent = cfg["entrenamiento"]
-    val = Contenedores(datos / "val")
-    evaluar = len(val) > 0
-    if not evaluar:
-        print("sin ejemplos de validacion: se entrena sin evaluar")
-    trainer = Trainer(
-        model=modelo,
-        args=argumentos(ent, salida, evaluar),
-        train_dataset=Contenedores(datos / "train"),
-        eval_dataset=subconjunto_eval(val, ent.get("max_contenedores_eval"), ent["semilla"]) if evaluar else None,
-        data_collator=Colador(),
-        callbacks=[Sondeo(cargar_lotes(cfg["evaluacion"]), cfg["evaluacion"]["fragmento"], Path(salida) / "sondeo")],
-    )
-    trainer.train(resume_from_checkpoint=reanudar)
-    trainer.save_model(str(Path(salida) / "adaptador_final"))
-    if evaluar and len(trainer.eval_dataset) < len(val):
-        print(f"validacion completa: {trainer.evaluate(eval_dataset=val)}")
+    signal.signal(signal.SIGTERM, lambda senal, marco: sys.exit(128 + senal))
+    seguimiento = Seguimiento(cfg, salida, reanudar)
+    try:
+        exigir_kernels()
+        modelo = aplicar_lora(cargar(cfg["modelo"], liger=True), cfg["lora"])
+        seguimiento.modelo_cargado(modelo)
+        datos = Path(cfg["datos"]["salida"])
+        ent = cfg["entrenamiento"]
+        val = Contenedores(datos / "val")
+        evaluar = len(val) > 0
+        if not evaluar:
+            print("sin ejemplos de validacion: se entrena sin evaluar")
+        sondeo = Sondeo(
+            cargar_lotes(cfg["evaluacion"]), cfg["evaluacion"]["fragmento"], Path(salida) / "sondeo", seguimiento.registro
+        )
+        trainer = Trainer(
+            model=modelo,
+            args=argumentos(ent, salida, evaluar),
+            train_dataset=Contenedores(datos / "train"),
+            eval_dataset=subconjunto_eval(val, ent.get("max_contenedores_eval"), ent["semilla"]) if evaluar else None,
+            data_collator=Colador(),
+            callbacks=[seguimiento.callback, sondeo],
+        )
+        trainer.train(resume_from_checkpoint=reanudar)
+        trainer.save_model(str(Path(salida) / "adaptador_final"))
+        if evaluar and len(trainer.eval_dataset) < len(val):
+            completa = trainer.evaluate(eval_dataset=val)
+            print(f"validacion completa: {completa}")
+            seguimiento.anotar("validacion_completa", completa)
+    except BaseException as e:
+        seguimiento.cerrar(e)
+        raise
+    seguimiento.cerrar()

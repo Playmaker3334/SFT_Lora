@@ -16,6 +16,10 @@ dependencies = [
     "pyyaml",
     "numpy",
     "tensorboard==2.21.0",
+    "matplotlib==3.11.2",
+    "slack_sdk==3.44.1",
+    "nvidia-ml-py==13.615.71",
+    "psutil==7.2.2",
 ]
 
 [project.optional-dependencies]

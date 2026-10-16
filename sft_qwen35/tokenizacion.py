@@ -58,6 +58,8 @@ def construir(docs, tokenizador, cfg, destino):
     exceden = segmentos.filter(lambda n: n > cfg["seq_len"], input_columns="n")
     if len(exceden):
         print(f"descartados por exceder seq_len={cfg['seq_len']}: {exceden['id']}")
+    destino.mkdir(parents=True, exist_ok=True)
+    (destino / "descartados.json").write_text(json.dumps(exceden.select_columns(["id", "n", "particion"]).to_list()))
     segmentos = segmentos.filter(lambda n: n <= cfg["seq_len"], input_columns="n").remove_columns("difiere_dataset")
     for part in ("train", "val"):
         sub = segmentos.filter(lambda p: p == part, input_columns="particion")

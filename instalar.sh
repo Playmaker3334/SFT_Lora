@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --no-install-recommends fonts-lmodern
+
 pip install --ignore-installed cryptography
 pip install "torch==2.11.0" --index-url https://download.pytorch.org/whl/cu128
 pip uninstall -y torchvision torchaudio

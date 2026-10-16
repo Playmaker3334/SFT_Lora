@@ -27,6 +27,10 @@ def main():
     sp.add_argument("--adaptador", required=True)
     sp.add_argument("--salida", required=True)
 
+    sp = sub.add_parser("graficas")
+    sp.add_argument("--metricas", required=True)
+    sp.add_argument("--slack", action="store_true")
+
     a = p.parse_args()
     cfg = yaml.safe_load(Path(a.config).read_text(encoding="utf-8"))
 
@@ -73,6 +77,16 @@ def main():
         from sft_qwen35.modelo import fusionar
 
         fusionar(cfg["modelo"], a.adaptador, a.salida)
+
+    elif a.cmd == "graficas":
+        from sft_qwen35.avisos import Slack
+        from sft_qwen35.graficas import generar, leer
+
+        rutas = generar(a.metricas)
+        print("\n".join(str(r) for r in rutas))
+        if a.slack:
+            corrida = leer(a.metricas)["corrida"]
+            Slack(corrida.get("slack_hilo")).imagenes(rutas, f"Gráficas de {corrida['nombre']}")
 
 
 if __name__ == "__main__":

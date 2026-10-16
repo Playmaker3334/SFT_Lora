@@ -29,10 +29,17 @@ entrenamiento:
   lr: 1.0e-4
   calentamiento: 0.03
   estrategia: steps
-  pasos_guardado: 25
+  pasos_guardado: 0.05
+  checkpoints: 2
   pasos_registro: 1
   max_contenedores_eval: 32
   semilla: 42
+
+monitoreo:
+  intervalo_s: 5
+  latido_min: 30
+  proveedor: RunPod
+  precio_hora_gpu: 0.59
 
 evaluacion:
   lotes: lotes_sft
