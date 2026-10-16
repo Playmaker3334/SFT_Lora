@@ -51,7 +51,9 @@ def _git():
     raiz = Path(__file__).resolve().parent.parent
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=raiz, capture_output=True, text=True, check=True)
-        cambios = subprocess.run(["git", "status", "--porcelain"], cwd=raiz, capture_output=True, text=True, check=True)
+        cambios = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"], cwd=raiz, capture_output=True, text=True, check=True
+        )
     except (OSError, subprocess.CalledProcessError):
         return None
     return {"commit": commit.stdout.strip(), "cambios_sin_commit": bool(cambios.stdout.strip())}
