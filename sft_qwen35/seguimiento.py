@@ -55,9 +55,11 @@ class Seguimiento:
     def modelo_cargado(self, modelo):
         if not self.activo:
             return
+        base = [(n, p.numel()) for n, p in modelo.named_parameters() if "lora_" not in n]
         self.registro.corrida["modelo"] = {
             "parametros": sum(p.numel() for p in modelo.parameters()),
             "entrenables": sum(p.numel() for p in modelo.parameters() if p.requires_grad),
+            "parametros_flops": sum(k for n, k in base if "embed_tokens" not in n),
         }
         self.registro.marcar("modelo_cargado")
 

@@ -1,10 +1,12 @@
 import argparse
+import os
 from pathlib import Path
 
 import yaml
 
 
 def main():
+    os.environ.setdefault("NCCL_P2P_DISABLE", "1")
     p = argparse.ArgumentParser()
     p.add_argument("--config", default="config.yaml")
     sub = p.add_subparsers(dest="cmd", required=True)

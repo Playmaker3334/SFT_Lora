@@ -36,8 +36,6 @@ entrenamiento:
 monitoreo:
   intervalo_s: 5
   latido_min: 30
-  proveedor: RunPod
-  precio_hora_gpu: 0.59
 
 evaluacion:
   lotes: lotes_mock

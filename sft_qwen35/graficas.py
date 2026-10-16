@@ -188,6 +188,17 @@ def resumen_datos(d):
     return salida
 
 
+def computo(m, tok_s, tokens):
+    n = (m["corrida"].get("modelo") or {}).get("parametros_flops")
+    if not n or not tok_s:
+        return {}
+    return {
+        "parametros_flops": n,
+        "tflops_logrados": 6 * n * tok_s / 1e12,
+        "flops_totales": 6 * n * tokens,
+    }
+
+
 def resumen(m):
     c = m["corrida"]
     e = c["entorno"]
@@ -196,20 +207,22 @@ def resumen(m):
     limpios = [i["tok_s"] for i in intervalos(m) if i["limpio"]]
     q25, _, q75 = statistics.quantiles(limpios, n=4, method="inclusive") if len(limpios) > 1 else (None, None, None)
     entrenamiento = _entrenamiento(m)
-    precio = (c.get("monitoreo") or {}).get("precio_hora_gpu")
+    costo_hora = (e.get("runpod") or {}).get("costo_hora")
     f = fases(m)
     total = sum(f.values())
+    tokens = max((p.get("num_input_tokens_seen", 0) for p in m["pasos"]), default=0)
+    mediana = statistics.median(limpios) if limpios else None
     return {
         "estado": c.get("estado"),
         "gpu": e["gpus"][0]["nombre"] if e["gpus"] else None,
         "gpus": gpus,
         "duracion_s": duracion,
         "horas_gpu": duracion / 3600 * gpus,
-        "costo_usd": duracion / 3600 * gpus * precio if precio else None,
+        "costo_usd": duracion / 3600 * costo_hora if costo_hora else None,
         "pasos": c.get("pasos"),
         "pasos_totales": c.get("pasos_totales"),
-        "tokens": max((p.get("num_input_tokens_seen", 0) for p in m["pasos"]), default=0),
-        "tok_s_mediana": statistics.median(limpios) if limpios else None,
+        "tokens": tokens,
+        "tok_s_mediana": mediana,
         "tok_s_q25": q25,
         "tok_s_q75": q75,
         "intervalos_limpios": len(limpios),
@@ -219,6 +232,7 @@ def resumen(m):
         "fases_s": f,
         "fraccion_fuera_de_entrenamiento": 1 - f["entrenamiento"] / total if total else None,
         "vram_torch": c.get("vram"),
+        **computo(m, mediana, tokens),
         **energia(m),
         "datos": resumen_datos(m["datos"]) if m["datos"] else None,
     }

@@ -113,6 +113,10 @@ def texto_resumen(c):
         if r.get("tok_s_q25") is not None:
             velocidad += f" (RIC {r['tok_s_q25']:,.0f}–{r['tok_s_q75']:,.0f})"
     lineas.append(f"Tokens {r['tokens']:,}{velocidad}")
+    if r.get("tflops_logrados") is not None:
+        lineas.append(
+            f"Cómputo (aprox. 6N): {r['tflops_logrados']:.1f} TFLOPS · {r['flops_totales']:.2e} FLOPs totales"
+        )
     if r.get("energia_kwh") is not None:
         potencias = " / ".join(f"{g['potencia_media_w']:.0f}" for g in r["gpus_medidas"] if g["potencia_media_w"] is not None)
         lineas.append(f"Energía de las GPUs {r['energia_kwh']:.3f} kWh · potencia media {potencias} W")

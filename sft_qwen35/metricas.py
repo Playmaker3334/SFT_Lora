@@ -4,6 +4,7 @@ import platform
 import subprocess
 import threading
 import time
+import urllib.request
 from importlib import metadata
 from pathlib import Path
 
@@ -59,6 +60,25 @@ def _git():
     return {"commit": commit.stdout.strip(), "cambios_sin_commit": bool(cambios.stdout.strip())}
 
 
+def _runpod():
+    pod = os.environ.get("RUNPOD_POD_ID")
+    if not pod:
+        return None
+    info = {"pod_id": pod, "centro_datos": os.environ.get("RUNPOD_DC_ID"), "costo_hora": None}
+    clave = os.environ.get("RUNPOD_API_KEY")
+    if clave:
+        consulta = json.dumps({"query": f'query {{ pod(input: {{podId: "{pod}"}}) {{ costPerHr }} }}'}).encode()
+        pedido = urllib.request.Request(
+            f"https://api.runpod.io/graphql?api_key={clave}", data=consulta, headers={"content-type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(pedido, timeout=10) as respuesta:
+                info["costo_hora"] = json.loads(respuesta.read())["data"]["pod"]["costPerHr"]
+        except (OSError, ValueError, KeyError, TypeError) as e:
+            print(f"runpod: no se pudo leer el costo por hora ({e})")
+    return info
+
+
 def entorno():
     gpus = []
     for i in range(pynvml.nvmlDeviceGetCount()):
@@ -81,6 +101,8 @@ def entorno():
         "procesos": int(os.environ.get("WORLD_SIZE", 1)),
         "cpus": os.cpu_count(),
         "git": _git(),
+        "runpod": _runpod(),
+        "nccl": {k: v for k, v in os.environ.items() if k.startswith("NCCL_")},
     }
 
 
