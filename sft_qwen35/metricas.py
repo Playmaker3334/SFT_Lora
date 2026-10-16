@@ -116,11 +116,13 @@ def picos_vram():
 
 
 def ram_contenedor():
-    try:
-        stat = dict(linea.split() for linea in Path("/sys/fs/cgroup/memory.stat").read_text().splitlines())
-        return int(stat["anon"]) / 2**20
-    except (OSError, KeyError, ValueError):
-        return None
+    for ruta, campo in (("/sys/fs/cgroup/memory.stat", "anon"), ("/sys/fs/cgroup/memory/memory.stat", "total_rss")):
+        try:
+            stat = dict(linea.split() for linea in Path(ruta).read_text().splitlines())
+            return int(stat[campo]) / 2**20
+        except (OSError, KeyError, ValueError):
+            continue
+    return None
 
 
 class Registro:

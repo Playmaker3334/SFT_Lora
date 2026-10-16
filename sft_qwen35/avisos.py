@@ -93,7 +93,8 @@ def texto_arranque(c, datos):
             f"{d['fraccion_con_perdida']:.0%} con pérdida · ocupación de contenedores {d['ocupacion']:.0%}{descartados}"
         )
     ent = cfg["entrenamiento"]
-    lineas.append(f"{ent['epocas']} épocas · lr {ent['lr']} · LoRA r={cfg['lora']['r']} · seq_len {cfg['datos']['seq_len']:,}")
+    epocas = f"{ent['epocas']} {'época' if ent['epocas'] == 1 else 'épocas'}"
+    lineas.append(f"{epocas} · lr {ent['lr']} · LoRA r={cfg['lora']['r']} · seq_len {cfg['datos']['seq_len']:,}")
     return "\n".join(lineas)
 
 

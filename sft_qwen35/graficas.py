@@ -1,5 +1,6 @@
 import glob
 import json
+import logging
 import statistics
 from pathlib import Path
 
@@ -28,6 +29,8 @@ FASES = {
     "guardado": "Checkpoints",
     "cierre": "Cierre",
 }
+
+logging.getLogger("fontTools.ttLib.tables._h_e_a_d").setLevel(logging.ERROR)
 
 for _fuente in glob.glob("/usr/share/texmf/fonts/opentype/public/lm/lmroman10-*.otf"):
     font_manager.fontManager.addfont(_fuente)
