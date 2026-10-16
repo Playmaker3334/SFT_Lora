@@ -4,6 +4,8 @@ from pathlib import Path
 
 from slack_sdk import WebClient
 
+from .graficas import FASES
+
 ESTADOS = {
     "terminado": "terminó",
     "fallo": "FALLÓ",
@@ -127,7 +129,7 @@ def texto_resumen(c):
         lineas.append(f"Loss final {r['loss_final']:.4f}{mejor}")
     if r.get("fraccion_fuera_de_entrenamiento") is not None:
         otras = ", ".join(
-            f"{k.replace('_', ' ')} {v / 60:.1f} min" for k, v in r["fases_s"].items() if k != "entrenamiento" and v >= 1
+            f"{FASES[k].lower()} {v / 60:.1f} min" for k, v in r["fases_s"].items() if k != "entrenamiento" and v >= 1
         )
         lineas.append(f"Fuera de entrenamiento: {r['fraccion_fuera_de_entrenamiento']:.0%} ({otras})")
     return "\n".join(lineas)

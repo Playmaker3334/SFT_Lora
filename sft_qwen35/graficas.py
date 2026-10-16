@@ -18,7 +18,6 @@ EJE = "#333333"
 MARCAS = "#555555"
 REJILLA = "#EEEEEE"
 REFERENCIA = "#9A9A9A"
-CAJA = dict(fc="white", ec="none", pad=1.5)
 NOTA = 7.5
 FASES = {
     "carga_modelo": "Carga del modelo",
@@ -277,9 +276,9 @@ def g_longitudes(m, destino):
     tope = max(n.max(initial=0), largos.max(initial=0), seq_len) * 1.05
     bins = np.linspace(0, tope, 61)
     fig, ax = _ejes()
-    ax.hist(n, bins=bins, color=ROSA, ec="white", lw=0.5)
+    ax.hist(n, bins=bins, color=ROSA, edgecolor="white", linewidth=0.5)
     if largos.size:
-        ax.hist(largos, bins=bins, color=REFERENCIA, ec="white", lw=0.5)
+        ax.hist(largos, bins=bins, color=REFERENCIA, edgecolor="white", linewidth=0.5)
     ax.axvline(seq_len, color=REFERENCIA, lw=0.8, ls=(0, (4, 3)))
     lineas = [f"seq_len = {seq_len:,}"]
     if descartados is not None:
@@ -365,19 +364,9 @@ def g_velocidad(m, destino):
     p25, p50, p75 = _cuantiles_moviles(serie, ventana)
     mediana = np.nanmedian(serie)
     fig, ax = _ejes()
-    ax.fill_between(pasos, p25, p75, color=ROSA, alpha=0.22, lw=0, label="Rango intercuartil")
+    ax.fill_between(pasos, p25, p75, color=ROSA, alpha=0.22, linewidth=0, label="Rango intercuartil")
     ax.plot(pasos, p50, color=ROSA, lw=1.6, label=f"Mediana móvil ({ventana} pasos)")
-    ax.axhline(mediana, color=REFERENCIA, lw=0.8, ls=(0, (4, 3)))
-    ax.text(
-        pasos[-1] * 0.98,
-        mediana,
-        f"mediana {mediana:.2f}k",
-        ha="right",
-        va="center",
-        fontsize=NOTA,
-        color=MARCAS,
-        bbox=CAJA,
-    )
+    ax.axhline(mediana, color=REFERENCIA, lw=0.8, ls=(0, (4, 3)), label=f"Mediana total ({mediana:.2f}k)")
     bajo, alto = np.nanpercentile(serie, [1, 99])
     margen = (alto - bajo) * 0.5 or mediana * 0.05
     ax.set_ylim(bajo - margen, alto + margen)
@@ -393,7 +382,10 @@ def g_distribucion_velocidad(m, destino):
     limpios = tok_s[limpio]
     q25, mediana, q75 = np.percentile(limpios, [25, 50, 75])
     fig, ax = _ejes()
-    ax.hist(limpios, bins=min(40, max(10, limpios.size // 10)), color=ROSA, ec="white", lw=0.5)
+    alturas, _, _ = ax.hist(
+        limpios, bins=min(40, max(10, limpios.size // 10)), color=ROSA, edgecolor="white", linewidth=0.5
+    )
+    ax.set_ylim(0, alturas.max() * 1.45)
     ax.axvline(mediana, color=REFERENCIA, lw=0.8, ls=(0, (4, 3)))
     ax.text(
         0.97,
@@ -421,7 +413,7 @@ def g_tiempo(m, destino):
     ax.grid(False)
     ax.grid(axis="x", color=REJILLA, lw=0.6)
     colores = [ROSA if n == "entrenamiento" else NARANJA for n in nombres]
-    ax.barh([FASES[n] for n in nombres], valores, height=0.6, color=colores, lw=0)
+    ax.barh([FASES[n] for n in nombres], valores, height=0.6, color=colores, linewidth=0)
     for y, n in enumerate(nombres):
         ax.text(
             f[n] / escala,
