@@ -21,13 +21,13 @@ datos:
   num_proc: 8
 
 entrenamiento:
-  epocas: 2
+  epocas: 1
   max_pasos: -1
   acumulacion: 4
   lr: 1.0e-4
   calentamiento: 0.03
   estrategia: steps
-  pasos_guardado: 0.05
+  pasos_guardado: 0.25
   checkpoints: 2
   pasos_registro: 1
   max_contenedores_eval: 32
