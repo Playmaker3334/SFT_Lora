@@ -79,14 +79,18 @@ def main():
         fusionar(cfg["modelo"], a.adaptador, a.salida)
 
     elif a.cmd == "graficas":
-        from sft_qwen35.avisos import Slack
+        from sft_qwen35.avisos import Slack, texto_resumen
         from sft_qwen35.graficas import generar, leer
 
         rutas = generar(a.metricas)
         print("\n".join(str(r) for r in rutas))
         if a.slack:
             corrida = leer(a.metricas)["corrida"]
-            Slack(corrida.get("slack_hilo"), corrida.get("slack_canal")).imagenes(rutas, f"Gráficas de {corrida['nombre']}")
+            hilo = corrida.get("slack_hilo")
+            slack = Slack(hilo, corrida.get("slack_canal") if hilo else None)
+            if hilo is None and corrida.get("resumen"):
+                slack.mensaje(texto_resumen(corrida))
+            slack.imagenes(rutas, f"Gráficas de {corrida['nombre']}")
 
 
 if __name__ == "__main__":
