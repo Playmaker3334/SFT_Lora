@@ -13,9 +13,9 @@ ESTADOS = {
 
 
 class Slack:
-    def __init__(self, hilo=None):
+    def __init__(self, hilo=None, canal=None):
         token = os.environ.get("SLACK_BOT_TOKEN")
-        self.canal = os.environ.get("SLACK_CANAL")
+        self.canal = canal or os.environ.get("SLACK_CANAL")
         self.cliente = WebClient(token=token) if token and self.canal else None
         self.hilo = hilo
         if self.cliente is None:
@@ -26,6 +26,7 @@ class Slack:
             return
         try:
             respuesta = self.cliente.chat_postMessage(channel=self.canal, text=texto, thread_ts=self.hilo)
+            self.canal = respuesta["channel"]
             self.hilo = self.hilo or respuesta["ts"]
         except Exception as e:
             print(f"slack: {e}")

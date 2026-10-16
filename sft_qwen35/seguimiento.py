@@ -42,6 +42,7 @@ class Seguimiento:
         self.slack = Slack()
         self.slack.mensaje(texto_arranque(c, graficas.resumen_datos(datos)))
         c["slack_hilo"] = self.slack.hilo
+        c["slack_canal"] = self.slack.canal
         self.registro.guardar()
         self.monitor = Monitor(
             self.registro,

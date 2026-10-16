@@ -86,7 +86,7 @@ def main():
         print("\n".join(str(r) for r in rutas))
         if a.slack:
             corrida = leer(a.metricas)["corrida"]
-            Slack(corrida.get("slack_hilo")).imagenes(rutas, f"Gráficas de {corrida['nombre']}")
+            Slack(corrida.get("slack_hilo"), corrida.get("slack_canal")).imagenes(rutas, f"Gráficas de {corrida['nombre']}")
 
 
 if __name__ == "__main__":
